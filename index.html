@@ -40,6 +40,7 @@
     html{scroll-behavior:auto;}
     *{animation-duration:0.001ms !important; animation-iteration-count:1 !important; transition-duration:0.001ms !important;}
     .enter-gate{transition-duration:.5s !important;}
+    .ticker-track{animation-duration:26s !important; animation-iteration-count:infinite !important;}
   }
 
   /* ---------- MISTY SAKURA COURTYARD BACKGROUND ---------- */
@@ -170,10 +171,7 @@
     0%{transform:translateX(0);}
     100%{transform:translateX(-50%);}
   }
-  @media (prefers-reduced-motion: reduce){
-    .ticker-track{animation:none;}
-    .ticker{overflow-x:auto;}
-  }
+  /* Ticker keeps scrolling even under prefers-reduced-motion, by choice. */
   ul{list-style:none;}
   button{font:inherit; cursor:pointer;}
 
@@ -259,29 +257,50 @@
     cursor:pointer;
     touch-action:pan-y;
   }
+  /* .ctrl-badge-3d is the actual rotating "coin": it holds two faces
+     (front + back) pulled apart in 3D space, plus edge panels filling
+     the gap between them, so it reads as a solid object with real
+     depth instead of a flat plane that vanishes edge-on. */
+  .ctrl-badge-3d{
+    --badge-w:180px;
+    --badge-d:30px;
+    position:relative;
+    display:block;
+    transform-style:preserve-3d;
+    filter:drop-shadow(0 10px 18px rgba(70,45,65,0.22));
+    transition:filter .4s var(--ease);
+  }
+  .linkbio-logo .ctrl-badge-3d{--badge-w:208px;}
+  .ctrl-badge-3d.ctrl-badge-3d-sm{--badge-w:96px; --badge-d:18px;}
   .ctrl-badge-logo{
     width:180px; height:auto;
     display:block;
-    filter:drop-shadow(0 10px 18px rgba(70,45,65,0.22));
-    transform-style:preserve-3d;
-    animation:badge-spin 7s linear infinite;
-    transition:filter .4s var(--ease);
+    backface-visibility:hidden;
+    -webkit-backface-visibility:hidden;
+  }
+  .ctrl-badge-logo.ctrl-badge-face-front{
+    transform:translateZ(calc(var(--badge-d) / 2));
+  }
+  .ctrl-badge-logo.ctrl-badge-face-back{
+    position:absolute; inset:0;
+    transform:rotateY(180deg) translateZ(calc(var(--badge-d) / 2));
+  }
+  /* Extrusion: JS injects several copies of the same letterforms in
+     between front and back, each stepped slightly deeper in Z. Because
+     each copy IS the actual "CTRL" glyphs (not a placeholder panel),
+     the fill traces the letters' real silhouette, so it reads as solid
+     3D type with thickness rather than a flat cutout. */
+  .ctrl-badge-face-slice{
+    position:absolute; inset:0;
+    pointer-events:none;
   }
   @keyframes badge-spin{
     from{transform:rotateY(0deg);}
     to{transform:rotateY(360deg);}
   }
-  /* JS adds .tilting on mouseenter and updates the transform on every move.
-     Swapping the animation to badge-glow drops badge-spin, so the JS-set
-     inline transform takes over rotation while the filter glow pulses. */
-  .ctrl-badge-logo.tilting{
-    animation:badge-glow 1.4s var(--ease) infinite;
-    transition:transform .08s linear, filter .4s var(--ease);
-  }
-  @keyframes badge-glow{
-    0%,100%{filter:drop-shadow(0 18px 26px rgba(83,89,201,0.38)) drop-shadow(0 0 0px rgba(130,136,230,0));}
-    50%{filter:drop-shadow(0 22px 34px rgba(83,89,201,0.55)) drop-shadow(0 0 18px rgba(130,136,230,0.55));}
-  }
+  /* JS adds .tilting on hover: rotation itself is driven every frame by
+     JS (so the spin can pause/resume without ever snapping back to a
+     fixed start angle). */
   .ctrl-badge-sm{width:96px;}
   .footer-logo{display:inline-flex;}
 
@@ -857,7 +876,8 @@
     font-family:var(--font-mono); font-size:12px; letter-spacing:0.2em; text-transform:uppercase;
     color:var(--accent-cyan);
   }
-  .enter-gate .gate-logo .ctrl-badge-logo{width:210px; animation:none; transform:none;}
+  .enter-gate .gate-logo .ctrl-badge-logo{width:210px;}
+  .enter-gate .gate-logo .ctrl-badge-3d{animation:none; transform:none;}
   .enter-gate .gate-sub{color:var(--text-secondary); font-size:15px; max-width:340px; margin-top:2px;}
   .gate-prompt{
     display:flex; flex-direction:column; align-items:center; gap:8px;
@@ -910,9 +930,13 @@
 
 <div id="enterGate" class="enter-gate" role="button" tabindex="0" aria-label="Tap or swipe to enter Take CTRL Coaching">
   <span class="ctrl-badge-spin gate-logo" aria-hidden="true">
-    <svg class="ctrl-badge-logo" viewBox="0 0 220 92" aria-hidden="true"><use href="#ctrl-badge"/></svg>
+    <span class="ctrl-badge-3d">
+      <svg class="ctrl-badge-logo ctrl-badge-face-front" viewBox="0 0 220 92" aria-hidden="true"><use href="#ctrl-badge"/></svg>
+      <svg class="ctrl-badge-logo ctrl-badge-face-back" viewBox="0 0 220 92" aria-hidden="true"><use href="#ctrl-badge"/></svg>
+    </span>
   </span>
   <div class="gate-prompt">
+    <span class="gate-chevron" aria-hidden="true"></span>
     <span>Tap or Swipe to Enter</span>
   </div>
 </div>
@@ -946,7 +970,10 @@
       <div class="linkbio-inner reveal is-visible">
         <div class="linkbio-logo">
           <span class="ctrl-badge-spin">
-            <svg class="ctrl-badge-logo" viewBox="0 0 220 92" aria-hidden="true"><use href="#ctrl-badge"/></svg>
+            <span class="ctrl-badge-3d">
+              <svg class="ctrl-badge-logo ctrl-badge-face-front" viewBox="0 0 220 92" aria-hidden="true"><use href="#ctrl-badge"/></svg>
+              <svg class="ctrl-badge-logo ctrl-badge-face-back" viewBox="0 0 220 92" aria-hidden="true"><use href="#ctrl-badge"/></svg>
+            </span>
           </span>
         </div>
         <div class="linkbio-time" id="linkbioTime" aria-hidden="true"></div>
@@ -1011,7 +1038,10 @@
       <div>
         <a href="#top" class="logo footer-logo" style="margin-bottom:-8px;" aria-label="Take CTRL home">
           <span class="ctrl-badge-spin">
-            <svg class="ctrl-badge-logo ctrl-badge-sm" viewBox="0 0 220 92" aria-hidden="true"><use href="#ctrl-badge"/></svg>
+            <span class="ctrl-badge-3d ctrl-badge-3d-sm">
+              <svg class="ctrl-badge-logo ctrl-badge-sm ctrl-badge-face-front" viewBox="0 0 220 92" aria-hidden="true"><use href="#ctrl-badge"/></svg>
+              <svg class="ctrl-badge-logo ctrl-badge-sm ctrl-badge-face-back" viewBox="0 0 220 92" aria-hidden="true"><use href="#ctrl-badge"/></svg>
+            </span>
           </span>
         </a>
       </div>
@@ -1167,34 +1197,76 @@
     setInterval(update, 1000);
   })();
 
-  // Interactive 3D logo: static at rest, tilts toward the cursor and glows
-  // the moment you hover (or touch), stops the instant you leave.
+  // Extrude the badge: clone the front face's actual letterforms several
+  // times, stepping each copy deeper in Z between the front and back
+  // faces, so the "CTRL" wordmark reads as solid 3D type with real
+  // thickness instead of a flat cutout when the coin turns side-on.
   (function(){
-    var reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    if (reduced) return;
+    var SLICES = 8;
+    document.querySelectorAll('.ctrl-badge-3d').forEach(function(coin){
+      if (coin.closest('#enterGate')) return; // gate logo stays flat/static
+      var front = coin.querySelector('.ctrl-badge-face-front');
+      if (!front) return;
+      for (var i = 1; i <= SLICES; i++){
+        var frac = (i / (SLICES + 1) - 0.5).toFixed(4); // -0.5..0.5 across the depth
+        var slice = front.cloneNode(true);
+        slice.classList.remove('ctrl-badge-face-front');
+        slice.classList.add('ctrl-badge-face-slice');
+        slice.style.transform = 'translateZ(calc(var(--badge-d) * ' + frac + '))';
+        coin.appendChild(slice);
+      }
+    });
+  })();
+
+  // Interactive 3D logo: keeps spinning continuously; hovering (or
+  // touching) layers a tilt on top of wherever it currently is instead
+  // of snapping to a fixed orientation, and releasing lets it carry on
+  // spinning from that same point rather than resetting to the start.
+  (function(){
     var maxY = 55;   // left/right tilt range in degrees
     var maxX = 32;   // up/down tilt range in degrees
+    var SPIN_MS = 7000; // full rotation duration
 
     document.querySelectorAll('.ctrl-badge-spin').forEach(function(wrap){
       if (wrap.closest('#enterGate')) return;
-      var logo = wrap.querySelector('.ctrl-badge-logo');
+      var logo = wrap.querySelector('.ctrl-badge-3d');
       if (!logo) return;
+
+      var baseAngle = 0;   // persists across hover, never resets
+      var tiltX = 0, tiltY = 0;
+      var hovered = false;
+      var lastTs = null;
+
+      function frame(ts){
+        requestAnimationFrame(frame);
+        if (lastTs === null) lastTs = ts;
+        var dt = ts - lastTs;
+        lastTs = ts;
+        if (!hovered) {
+          baseAngle = (baseAngle + (dt / SPIN_MS) * 360) % 360;
+        }
+        var scale = hovered ? 1.1 : 1;
+        logo.style.transform = 'rotateX(' + tiltX.toFixed(2) + 'deg) rotateY(' +
+          (baseAngle + tiltY).toFixed(2) + 'deg) scale(' + scale + ')';
+      }
+      requestAnimationFrame(frame);
 
       function tiltTo(clientX, clientY){
         var rect = wrap.getBoundingClientRect();
         var px = (clientX - rect.left) / rect.width;   // 0..1 across the badge
         var py = (clientY - rect.top) / rect.height;   // 0..1 down the badge
-        var rotateY = (px - 0.5) * maxY;
-        var rotateX = (0.5 - py) * maxX;
-        logo.style.transform = 'rotateX(' + rotateX.toFixed(2) + 'deg) rotateY(' + rotateY.toFixed(2) + 'deg) scale(1.1)';
+        tiltY = (px - 0.5) * maxY;
+        tiltX = (0.5 - py) * maxX;
       }
       function engage(clientX, clientY){
+        hovered = true;
         logo.classList.add('tilting');
         tiltTo(clientX, clientY);
       }
       function release(){
+        hovered = false;
         logo.classList.remove('tilting');
-        logo.style.transform = '';
+        tiltX = 0; tiltY = 0;
       }
 
       wrap.addEventListener('mouseenter', function(e){ engage(e.clientX, e.clientY); });
