@@ -1220,6 +1220,75 @@
       if (isStatic){
         group.rotation.set(0, 0, 0);
         renderer.render(scene, camera);
+
+        var dragging = false, lastX = 0, lastY = 0;
+        var rotY = 0, rotX = 0;
+        var velY = 0, velX = 0;
+        wrap.style.cursor = 'grab';
+        wrap.style.touchAction = 'none';
+
+        function renderStatic(){
+          group.rotation.y = rotY;
+          group.rotation.x = rotX;
+          renderer.render(scene, camera);
+        }
+
+        function pointerDown(x, y){
+          dragging = true;
+          lastX = x; lastY = y;
+          velX = 0; velY = 0;
+          wrap.style.cursor = 'grabbing';
+        }
+        function pointerMove(x, y){
+          if (!dragging) return;
+          var dx = x - lastX, dy = y - lastY;
+          lastX = x; lastY = y;
+          velY = dx * 0.012;
+          velX = dy * 0.012;
+          rotY += velY;
+          rotX += velX;
+          renderStatic();
+        }
+        function pointerUp(){
+          if (!dragging) return;
+          dragging = false;
+          wrap.style.cursor = 'grab';
+          settle();
+        }
+
+        // After release, let the flung momentum fade out while the
+        // rotation itself eases toward zero directly (rather than via a
+        // restoring force), so it can only approach center — it never
+        // overshoots and swings past it.
+        function settle(){
+          function step(){
+            velY *= 0.94;
+            velX *= 0.94;
+            rotY = (rotY + velY) * 0.965;
+            rotX = (rotX + velX) * 0.965;
+            renderStatic();
+            if (Math.abs(velY) > 0.00008 || Math.abs(velX) > 0.00008 ||
+                Math.abs(rotY) > 0.0003 || Math.abs(rotX) > 0.0003){
+              requestAnimationFrame(step);
+            } else {
+              rotY = 0; rotX = 0;
+              renderStatic();
+            }
+          }
+          requestAnimationFrame(step);
+        }
+
+        wrap.addEventListener('mousedown', function(e){ pointerDown(e.clientX, e.clientY); });
+        window.addEventListener('mousemove', function(e){ pointerMove(e.clientX, e.clientY); });
+        window.addEventListener('mouseup', pointerUp);
+        wrap.addEventListener('touchstart', function(e){
+          if (e.touches && e.touches[0]) pointerDown(e.touches[0].clientX, e.touches[0].clientY);
+        }, { passive: true });
+        wrap.addEventListener('touchmove', function(e){
+          if (e.touches && e.touches[0]) pointerMove(e.touches[0].clientX, e.touches[0].clientY);
+        }, { passive: true });
+        wrap.addEventListener('touchend', pointerUp);
+        wrap.addEventListener('touchcancel', pointerUp);
         return;
       }
 
