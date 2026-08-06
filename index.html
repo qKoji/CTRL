@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>사랑해요</title>
 <link rel="icon" type="image/x-icon" href="favicon.ico">
-<meta name="description" content="ctrl what you can" />
+<meta name="description" content="ctrl what you can ⸜(｡˃ ᵕ ˂ )⸝♡" />
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
@@ -1210,16 +1210,17 @@
       group.add(mesh);
       scene.add(group);
 
-      // Frame the text: fit both width and height with margin, whatever
-      // this particular badge's canvas aspect ratio ends up being.
+      // Frame the text: fit the full bounding sphere (not just the flat
+      // front-on width/height) so nothing clips against the canvas edges
+      // as the logo spins/tilts and its silhouette changes shape.
       geo.computeBoundingBox();
-      var size = new THREE.Vector3();
-      geo.boundingBox.getSize(size);
+      geo.computeBoundingSphere();
+      var radius = geo.boundingSphere.radius;
       var vFov = camera.fov * Math.PI / 180;
       var hFov = 2 * Math.atan(Math.tan(vFov / 2) * camera.aspect);
-      var camZfromW = (size.x / 2) / Math.tan(hFov / 2);
-      var camZfromH = (size.y / 2) / Math.tan(vFov / 2);
-      camera.position.z = Math.max(camZfromW, camZfromH) * 1.3;
+      var camZfromW = radius / Math.sin(hFov / 2);
+      var camZfromH = radius / Math.sin(vFov / 2);
+      camera.position.z = Math.max(camZfromW, camZfromH) * 1.15;
       camera.lookAt(0, 0, 0);
 
       if (isStatic){
